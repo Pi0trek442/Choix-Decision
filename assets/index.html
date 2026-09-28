@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sélecteur & Comparateur Intelligents</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 32px;
+            border: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label.section-label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            color: var(--text);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        textarea {
+            width: 100%;
+            height: 90px;
+            padding: 12px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Radios / Method Choices */
+        .methods-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .method-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .method-option:hover {
+            border-color: var(--primary);
+            background-color: #f8fafc;
+        }
+
+        .method-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .method-option input[type="radio"] {
+            accent-color: var(--primary);
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .method-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        /* Tooltip styling */
+        .tooltip-container {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .tooltip-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--border);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: help;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .tooltip-container:hover .tooltip-icon {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tooltip-box {
+            visibility: hidden;
+            opacity: 0;
+            width: 260px;
+            background-color: #1e293b;
+            color: #fff;
+            text-align: left;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            position: absolute;
+            z-index: 10;
+            right: 0;
+            bottom: 130%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: opacity 0.2s, visibility 0.2s;
+            pointer-events: none;
+        }
+
+        .tooltip-box::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            right: 6px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #1e293b transparent transparent transparent;
+        }
+
+        .tooltip-container:hover .tooltip-box {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .btn-submit:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-submit:active {
+            transform: scale(0.99);
+        }
+
+        /* Interactive Area / Views */
+        .view-card {
+            display: none;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .progress-bar {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            font-weight: 500;
+        }
+
+        .duel-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .btn-choice {
+            padding: 24px 16px;
+            background: #f1f5f9;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+            word-break: break-word;
+        }
+
+        .btn-choice:hover {
+            border-color: var(--primary);
+            background: #e0e7ff;
+            color: var(--primary-hover);
+        }
+
+        /* Results */
+        .result-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .result-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .result-item.winner {
+            background: #e0e7ff;
+            border-color: var(--primary);
+            color: var(--primary-hover);
+            font-weight: 700;
+        }
+
+        .random-badge {
+            font-size: 2rem;
+            text-align: center;
+            padding: 24px;
+            background: #e0e7ff;
+            color: var(--primary-hover);
+            border-radius: 12px;
+            font-weight: 800;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Choix & Décision</h1>
+        <p class="subtitle">Compare tes choix ou laisse le hasard décider pour toi.</p>
+
+        <div class="form-group">
+            <label class="section-label" for="itemsInput">Vos éléments (séparés par des virgules)</label>
+            <textarea id="itemsInput" placeholder="ex: Pizza, Burger, Tacos, Salade, Sushi"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label class="section-label">Méthode de sélection</label>
+            <div class="methods-grid">
+
+                <!-- Option 1: Tous les duels -->
+                <label class="method-option">
+                    <div class="method-left">
+                        <input type="radio" name="method" value="all_duels" checked>
+                        <span class="method-title">Tous les duels</span>
+                    </div>
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon">?</span>
+                        <div class="tooltip-box">
+                            Compare chaque élément face à tous les autres. Ultra précis mais peut nécessiter beaucoup de
+                            clics si la liste est longue.
+                        </div>
+                    </div>
+                </label>
+
+                <!-- Option 2: Merge Sort -->
+                <label class="method-option">
+                    <div class="method-left">
+                        <input type="radio" name="method" value="merge_sort">
+                        <span class="method-title">Tri fusion (Merge Sort)</span>
+                    </div>
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon">?</span>
+                        <div class="tooltip-box">
+                            Algorithme mathématique optimisé. Il minimise le nombre de questions en déduisant les
+                            classements évidents. Parfait pour les listes moyennes à longues.
+                        </div>
+                    </div>
+                </label>
+
+                <!-- Option 3: Tinder-like (Arbre d'élimination) -->
+                <label class="method-option">
+                    <div class="method-left">
+                        <input type="radio" name="method" value="bracket">
+                        <span class="method-title">Arbre d'élimination (Tinder-like)</span>
+                    </div>
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon">?</span>
+                        <div class="tooltip-box">
+                            Matchs à élimination directe sous forme de tournoi ! C'est la méthode rapide style Tinder où
+                            le perdant saute immédiatement.
+                        </div>
+                    </div>
+                </label>
+
+                <!-- Option 4: Random -->
+                <label class="method-option">
+                    <div class="method-left">
+                        <input type="radio" name="method" value="random">
+                        <span class="method-title">Tirage Random (Vrai hasard)</span>
+                    </div>
+                    <div class="tooltip-container">
+                        <span class="tooltip-icon">?</span>
+                        <div class="tooltip-box">
+                            Utilise le générateur d'aléa cryptographique natif du navigateur pour une décision
+                            impartiale instantanée.
+                        </div>
+                    </div>
+                </label>
+
+            </div>
+        </div>
+
+        <button class="btn-submit" onclick="startProcess()">Lancer la sélection</button>
+
+        <!-- Zone de duel -->
+        <div id="duelView" class="view-card">
+            <div id="progressText" class="progress-bar">Match 1</div>
+            <div class="duel-grid">
+                <button id="choiceA" class="btn-choice" onclick="handleChoice(0)"></button>
+                <button id="choiceB" class="btn-choice" onclick="handleChoice(1)"></button>
+            </div>
+        </div>
+
+        <!-- Zone de résultat -->
+        <div id="resultView" class="view-card">
+            <div class="result-title">Résultat</div>
+            <div id="resultContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        let items = [];
+        let currentMethod = '';
+
+        // --- LE "VRAI" RANDOM CRYPTOGRAPHIQUE ---
+        // Utilise window.crypto.getRandomValues au lieu de Math.random()
+        // pour garantir une distribution parfaitement uniforme et impartiale.
+        function getTrueRandomInt(max) {
+            if (max <= 0) return 0;
+            const array = new Uint32Array(1);
+            window.crypto.getRandomValues(array);
+            return array[0] % max;
+        }
+
+        function parseInput() {
+            const raw = document.getElementById('itemsInput').value;
+            return raw.split(',')
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+        }
+
+        function startProcess() {
+            items = parseInput();
+            if (items.length === 0) {
+                alert("Veuillez entrer au moins un élément.");
+                return;
+            }
+
+            currentMethod = document.querySelector('input[name="method"]:checked').value;
+
+            // Cacher les vues
+            document.getElementById('duelView').style.display = 'none';
+            document.getElementById('resultView').style.display = 'none';
+
+            if (currentMethod === 'random') {
+                runRandomChoice();
+            } else {
+                if (items.length < 2) {
+                    alert("Ajoutez au moins 2 éléments pour démarrer une comparaison !");
+                    return;
+                }
+                if (currentMethod === 'all_duels') initAllDuels();
+                else if (currentMethod === 'merge_sort') initMergeSort();
+                else if (currentMethod === 'bracket') initBracket();
+            }
+        }
+
+        /* -------------------------------------------------------------
+           1. RANDOM CRYPTOGRAPHIQUE
+        ------------------------------------------------------------- */
+        function runRandomChoice() {
+            const selectedIndex = getTrueRandomInt(items.length);
+            const chosenItem = items[selectedIndex];
+
+            const container = document.getElementById('resultContainer');
+            container.innerHTML = `<div class="random-badge">🎉 ${chosenItem}</div>`;
+            document.getElementById('resultView').style.display = 'block';
+        }
+
+        /* -------------------------------------------------------------
+           2. TOUS LES DUELS (Round Robin)
+        ------------------------------------------------------------- */
+        let duelsList = [];
+        let currentDuelIndex = 0;
+        let duelScores = {};
+
+        function initAllDuels() {
+            duelScores = {};
+            items.forEach(i => duelScores[i] = 0);
+            duelsList = [];
+
+            for (let i = 0; i < items.length; i++) {
+                for (let j = i + 1; j < items.length; j++) {
+                    duelsList.push([items[i], items[j]]);
+                }
+            }
+
+            currentDuelIndex = 0;
+            document.getElementById('duelView').style.display = 'block';
+            renderAllDuelsStep();
+        }
+
+        function renderAllDuelsStep() {
+            if (currentDuelIndex >= duelsList.length) {
+                finishAllDuels();
+                return;
+            }
+            const pair = duelsList[currentDuelIndex];
+            document.getElementById('progressText').innerText = `Duel ${currentDuelIndex + 1} / ${duelsList.length}`;
+            document.getElementById('choiceA').innerText = pair[0];
+            document.getElementById('choiceB').innerText = pair[1];
+        }
+
+        function handleAllDuelsChoice(winnerIndex) {
+            const winner = duelsList[currentDuelIndex][winnerIndex];
+            duelScores[winner]++;
+            currentDuelIndex++;
+            renderAllDuelsStep();
+        }
+
+        function finishAllDuels() {
+            document.getElementById('duelView').style.display = 'none';
+            const sorted = Object.entries(duelScores).sort((a, b) => b[1] - a[1]);
+
+            let html = '<ul class="result-list">';
+            sorted.forEach(([item, score], idx) => {
+                const isWinner = idx === 0 ? 'winner' : '';
+                html += `<li class="result-item ${isWinner}"><span>#${idx + 1} ${item}</span><span>${score} pts</span></li>`;
+            });
+            html += '</ul>';
+
+            document.getElementById('resultContainer').innerHTML = html;
+            document.getElementById('resultView').style.display = 'block';
+        }
+
+        /* -------------------------------------------------------------
+           3. TRI FUSION (Merge Sort Asynchrone)
+        ------------------------------------------------------------- */
+        let mergeResolver = null;
+        let totalMergeQuestions = 0;
+
+        async function initMergeSort() {
+            totalMergeQuestions = 0;
+            document.getElementById('duelView').style.display = 'block';
+            const sorted = await mergeSortAsync(items);
+            finishMergeSort(sorted);
+        }
+
+        async function mergeSortAsync(arr) {
+            if (arr.length <= 1) return arr;
+            const mid = Math.floor(arr.length / 2);
+            const left = await mergeSortAsync(arr.slice(0, mid));
+            const right = await mergeSortAsync(arr.slice(mid));
+            return await mergeAsync(left, right);
+        }
+
+        async function mergeAsync(left, right) {
+            let result = [];
+            let lIndex = 0;
+            let rIndex = 0;
+
+            while (lIndex < left.length && rIndex < right.length) {
+                totalMergeQuestions++;
+                document.getElementById('progressText').innerText = `Tri Fusion - Question n°${totalMergeQuestions}`;
+                document.getElementById('choiceA').innerText = left[lIndex];
+                document.getElementById('choiceB').innerText = right[rIndex];
+
+                // Attendre le clic de l'utilisateur
+                const choice = await new Promise(resolve => { mergeResolver = resolve; });
+
+                if (choice === 0) {
+                    result.push(left[lIndex]);
+                    lIndex++;
+                } else {
+                    result.push(right[rIndex]);
+                    rIndex++;
+                }
+            }
+
+            return result.concat(left.slice(lIndex)).concat(right.slice(rIndex));
+        }
+
+        function finishMergeSort(sortedArray) {
+            document.getElementById('duelView').style.display = 'none';
+
+            let html = '<ul class="result-list">';
+            sortedArray.forEach((item, idx) => {
+                const isWinner = idx === 0 ? 'winner' : '';
+                html += `<li class="result-item ${isWinner}"><span>#${idx + 1} ${item}</span></li>`;
+            });
+            html += '</ul>';
+
+            document.getElementById('resultContainer').innerHTML = html;
+            document.getElementById('resultView').style.display = 'block';
+        }
+
+        /* -------------------------------------------------------------
+           4. ARBRE D'ÉLIMINATION (Bracket / Tinder-like)
+        ------------------------------------------------------------- */
+        let currentRoundItems = [];
+        let nextRoundItems = [];
+        let bracketIndex = 0;
+
+        function initBracket() {
+            // Mélanger un peu au début pour que le tirage du tournoi soit équitable
+            currentRoundItems = [...items].sort(() => Math.random() - 0.5);
+            nextRoundItems = [];
+            bracketIndex = 0;
+
+            document.getElementById('duelView').style.display = 'block';
+            renderBracketStep();
+        }
+
+        function renderBracketStep() {
+            // S'il ne reste qu'un seul élément au total : on a le vainqueur
+            if (currentRoundItems.length === 1 && nextRoundItems.length === 0) {
+                finishBracket(currentRoundItems[0]);
+                return;
+            }
+
+            // Si le tour actuel est fini, on passe au tour suivant
+            if (bracketIndex >= currentRoundItems.length - 1) {
+                if (bracketIndex === currentRoundItems.length - 1) {
+                    // Élément impair qualifié d'office pour le prochain tour
+                    nextRoundItems.push(currentRoundItems[bracketIndex]);
+                }
+                currentRoundItems = [...nextRoundItems];
+                nextRoundItems = [];
+                bracketIndex = 0;
+                renderBracketStep();
+                return;
+            }
+
+            document.getElementById('progressText').innerText = `Tournoi - Reste ${currentRoundItems.length + nextRoundItems.length} candidats`;
+            document.getElementById('choiceA').innerText = currentRoundItems[bracketIndex];
+            document.getElementById('choiceB').innerText = currentRoundItems[bracketIndex + 1];
+        }
+
+        function handleBracketChoice(winnerIndex) {
+            const winner = currentRoundItems[bracketIndex + winnerIndex];
+            nextRoundItems.push(winner);
+            bracketIndex += 2;
+            renderBracketStep();
+        }
+
+        function finishBracket(winner) {
+            document.getElementById('duelView').style.display = 'none';
+            const container = document.getElementById('resultContainer');
+            container.innerHTML = `<div class="random-badge">🏆 Vainqueur : ${winner}</div>`;
+            document.getElementById('resultView').style.display = 'block';
+        }
+
+        /* -------------------------------------------------------------
+           GESTIONNAIRE DE CLICS UNIFIÉ
+        ------------------------------------------------------------- */
+        function handleChoice(selectedIndex) {
+            if (currentMethod === 'all_duels') {
+                handleAllDuelsChoice(selectedIndex);
+            } else if (currentMethod === 'merge_sort') {
+                if (mergeResolver) mergeResolver(selectedIndex);
+            } else if (currentMethod === 'bracket') {
+                handleBracketChoice(selectedIndex);
+            }
+        }
+    </script>
+</body>
+
+</html>
